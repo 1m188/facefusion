@@ -35,8 +35,8 @@ def process(start_time : float) -> ErrorCode:
 
 
 def setup() -> ErrorCode:
-	if analyse_image(state_manager.get_item('target_path')):
-		return 3
+	#if analyse_image(state_manager.get_item('target_path')):
+	#	return 3
 
 	logger.debug(translator.get('clearing_temp'), __name__)
 	clear_temp_directory(state_manager.get_item('target_path'))

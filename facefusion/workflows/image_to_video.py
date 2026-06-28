@@ -44,8 +44,8 @@ def process(start_time : float) -> ErrorCode:
 def setup() -> ErrorCode:
 	trim_frame_start, trim_frame_end = restrict_trim_frame(state_manager.get_item('target_path'), state_manager.get_item('trim_frame_start'), state_manager.get_item('trim_frame_end'))
 
-	if analyse_video(state_manager.get_item('target_path'), trim_frame_start, trim_frame_end):
-		return 3
+	#if analyse_video(state_manager.get_item('target_path'), trim_frame_start, trim_frame_end):
+	#	return 3
 
 	logger.debug(translator.get('clearing_temp'), __name__)
 	clear_temp_directory(state_manager.get_item('target_path'))

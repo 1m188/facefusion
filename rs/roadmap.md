@@ -135,6 +135,10 @@ facefusion-rs/                             # Cargo workspace
 │       ├── table.rs                       # 表格渲染
 │       └── locale.rs                      # i18n
 │
+├── tests/                                   # 端到端测试
+│
+├── testdata/                                # 测试数据
+│
 └── assets/
     └── facefusion.toml                    # 默认配置
 ```
@@ -160,7 +164,7 @@ facefusion-rs/                             # Cargo workspace
 │  ├─ vision.rs         视觉处理基础                    │
 │  ├─ ffmpeg.rs         FFmpeg 桥接                    │
 │  ├─ audio.rs          音频处理                       │
-│  └─ voice_extractor   声音分离                       │
+│  └─ voice_extractor.rs   声音分离                       │
 ├──────────────────────────────────────────────────────┤
 │  facefusion-models/    模型清单 + 自下载             │  ← 模型清单层
 └──────────────────────────────────────────────────────┘
@@ -348,7 +352,7 @@ FFmpeg::restore_audio()   → output.mp4 ← original audio
 
 ```rust
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum FaceFusionError {
     // ── 推理 ──
     #[error("ONNX session error: {0}")]
     Ort(#[from] ort::Error),
@@ -386,8 +390,8 @@ pub enum Error {
     ArgOutOfRange { arg: String, value: String, min: f64, max: f64 },
 
     // ── 通用 ──
-    #[error(transparent)]
-    Other(#[from] anyhow::Error),
+    // 注：本 enum 覆盖所有已知错误类别。若出现新错误类型，应新增语义化变体，
+    // 而非依赖 anyhow 做通用兜底（保持 core 库对 anyhow 的零依赖）。
 }
 ```
 
@@ -407,7 +411,7 @@ pub enum Error {
 
 | 路径 | 默认（便携）解析 |
 |------|-----------------|
-| 应用根目录 | `std::env::current_exe().parent().unwrap()` |
+| 应用根目录 | `std::env::current_exe().parent().expect("exe has no parent directory")` |
 | 运行时依赖 (onnxruntime, ffmpeg) | `{app_dir}/runtime/` |
 | 模型缓存 | `{app_dir}/models/` |
 | 配置文件 | `{app_dir}/facefusion.toml` |
@@ -437,7 +441,7 @@ pub enum Error {
 | 哈希 | `crc32fast` | `zlib.crc32` |
 | JSON | `serde_json` | `json` |
 | 音频 I/O | `hound` | `soundfile` |
-| 错误 | `thiserror` + `anyhow` | Exception |
+| 错误 | `thiserror`（库）+ `anyhow`（CLI） | Exception |
 | 异步 | `tokio` | asyncio |
 | 并行 | `rayon` | `concurrent.futures` |
 | 路径 | `dirs` | `appdirs` |
@@ -459,6 +463,8 @@ pub enum Error {
 | ONNX Runtime | pip 安装 | 捆绑 .dll/.so/.dylib |
 | 跨平台 | 源码级（每台配环境） | 发行级（CI 多平台构建） |
 | 二进制 | N/A | ~30MB / ~2GB（离线全量包） |
+
+> **开发纪律**：编码、测试、审查流程（TDD 工作流、MDPR 四层审查、编码规范）详见 [AGENTS.md](./AGENTS.md)。
 
 ---
 
@@ -543,7 +549,7 @@ facefusion-rs/
 - [ ] `facefusion-models/src/lib.rs` + `models.toml`：模型 URL / hash / 尺寸 清单
 - [ ] `src/main.rs`：clap App，仅打印版本号 `--version`
 - [ ] CI：GitHub Actions 跨平台编译矩阵 `windows-latest / macos-latest / ubuntu-latest`
-- [ ] CI 中加入 `cargo clippy -- -D warnings` + `cargo fmt --check`
+- [ ] CI 中加入 `cargo clippy --workspace -- -D warnings` + `cargo fmt --all -- --check` + `cargo test --workspace`
 
 #### 1.1 — 配置 & 类型 & 基础工具
 - [ ] `config.rs`：TOML 加载/保存，`State` 结构体（serde）
